@@ -1,65 +1,126 @@
-# Sheapit – Logistics app architecture design
+# Sheapit – Logistics App Architecture Design
 
-Sheapit is a logistics coordination platform connecting shippers, transport companies, and drivers to manage the full shipment lifecycle—from request creation to delivery and invoicing.
-
+Sheapit is a logistics coordination platform connecting shippers, transport companies, and drivers throughout the shipment lifecycle—from creation to delivery and invoicing.  
 This repository contains the architectural design package for the academic project **“Designing Apps and APIs.”**
 
 ---
 
 ## 🚀 Overview
 
-Sheapit centralizes communication and operations for road-transport logistics.  
-It provides multiple frontends, modular backend services, and integrations required to support real-time shipment coordination.
+Sheapit centralizes road-transport operations with multiple frontends, modular backend services, and integrations for real-time coordination.
+
+### 🔑 Core Features
+- Create, assign, and track shipments
+- Real-time driver location updates
+- Proof of delivery (photos, signatures)
+- Route + ETA via external Maps API
+- Automated invoicing
+- Multi-tenant RBAC access control
 
 ---
 
 ## 🧑‍🤝‍🧑 User Types
-
-- **Shipper** – Creates shipment requests, tracks deliveries, reviews invoices.
-- **Transport Company (Dispatcher/Manager)** – Assigns shipments, manages fleet, monitors operations.
-- **Driver** – Receives tasks on mobile app, updates statuses, provides proof of delivery.
-
----
-
-## 🖥️ Frontend Applications
-
-- **Shipper Web Dashboard** – Shipment creation & tracking.
-- **Transport Company Operations Console** – Planning board, fleet view.
-- **Driver Mobile App** – Assignments, live status, proof of delivery.
-
----
-
-## 🧱 Backend Services
-
-- **Auth & Identity Service**
-- **Shipment Management Service**
-- **Fleet & Assignment Service**
-- **Billing & Invoicing Service**
-- **Notifications & Async Jobs Service**
-
-Each service is designed to be independently scalable and accessed through an API Gateway.
-
----
-
-## 🔑 Core Features
-
-- Create, assign, and track shipments.
-- Real-time driver updates + GPS/location tracking.
-- Proof of delivery (signature, photos).
-- Route + ETA calculation via external Maps API.
-- Automated invoicing and payment handling.
-- Multi-tenant access control (organizations & roles).
+- **Shipper** – creates shipments, tracks delivery, views invoices
+- **Transport Company** – dispatches shipments, manages drivers/vehicles
+- **Driver** – receives assignments, updates status, sends POD
 
 ---
 
 ## 🗄️ Data Store
 
-Primary storage uses a relational database containing entities such as:
+A relational database (PostgreSQL) storing:
+- Users & Organizations
+- Drivers & Vehicles
+- Shipments & Stops
+- Assignments
+- Invoices & Payments
 
-- **Users & Organizations**
-- **Drivers & Vehicles**
-- **Shipments & Stops**
-- **Assignments**
-- **Invoices & Payments**
+Designed for integrity, reporting, and authorization use cases.
 
-Designed with clear relationships to support reporting, authorization, and operational workflows.
+---
+
+## 🚀 Project Elements
+
+### Frontends
+- **Shipper Web Dashboard**
+- **Transport Console**
+- **Driver Mobile App**
+
+### Backend Services
+- Auth & Identity
+- Shipment Management
+- Fleet & Assignment
+- Billing & Invoicing
+- Maps/Route Service
+- Media/File Service
+- Notifications & Async Jobs
+
+### Infrastructure
+- PostgreSQL (primary DB)
+- Redis (cache for GPS, ETAs, active shipments)
+- S3 (proof-of-delivery storage)
+- Message Broker (Kafka/SQS/RabbitMQ)
+- API Gateway
+- Monitoring & Logging (CloudWatch / ELK)
+
+---
+
+## 🧱 Architecture Patterns
+
+- **Microservices behind an API Gateway**
+- **Admin Monolith** for back-office operations (organizations, roles, audits)
+
+### Microservices
+- Authentication
+- Shipment
+- Fleet & Assignment
+- Billing
+- Maps/Route
+- Media Storage
+
+### Serverless / Async Workers
+- Notifications (email, SMS, push)
+- ETA recalculations
+- POD processing
+- Invoice generation
+
+### Message Queue Events
+- `ShipmentCreated`
+- `ShipmentAssigned`
+- `StatusUpdated`
+- `ProofOfDeliveryCaptured`
+- `InvoiceIssued`
+
+---
+
+## 🔌 Communication Types
+
+### Synchronous (REST/gRPC)
+- Frontend → Gateway → Services
+- Standard CRUD operations
+- Calls to external Maps API
+
+### Asynchronous (Events / Queues)
+- Shipment & assignment lifecycle events
+- Notification dispatch
+- Billing workflows
+- Background jobs
+
+### Real-Time (WebSockets)
+- Live shipment and driver location updates
+- Dynamic transport console dashboards
+
+---
+
+## 🔐 AuthN & AuthZ
+
+### Authentication
+- JWT access tokens (web + mobile)
+- OAuth2/OIDC login
+- Refresh tokens for session renewal
+
+### Authorization
+- Role-based: Shipper, Dispatcher, Driver, Accountant, Admin
+- API Gateway: token validation + scopes
+- Services: enforcement of business rules per organization  
+
