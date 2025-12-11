@@ -124,3 +124,99 @@ Designed for integrity, reporting, and authorization use cases.
 - API Gateway: token validation + scopes
 - Services: enforcement of business rules per organization  
 
+flowchart TB
+
+%% ============================
+%%          STYLING
+%% ============================
+classDef user fill:#ffcc80,stroke:#e57c00,stroke-width:1px,color:#000
+classDef client fill:#ffe6cc,stroke:#cc6600,stroke-width:1px,color:#000
+classDef internal fill:#cce0ff,stroke:#3366cc,stroke-width:1px,color:#000
+classDef db fill:#d9d9d9,stroke:#666,stroke-width:1px,color:#000
+classDef external fill:#ccffcc,stroke:#339933,stroke-width:1px,color:#000
+classDef boundary stroke-dasharray: 5 5
+
+%% ============================
+%%          USERS
+%% ============================
+subgraph Users
+U1(Shipper)
+U2(Transport Company)
+U3(Driver)
+end
+class Users boundary
+class U1,U2,U3 user
+
+%% ============================
+%%      CLIENT APPLICATIONS
+%% ============================
+subgraph Client_Apps[Client Applications (Public)]
+WA(Web App - Shipper Portal<br/>Next.js)
+MA1(Mobile App - Shipper/Requester<br/>React Native)
+MA2(Mobile App - Driver/Carrier<br/>React Native)
+end
+class Client_Apps boundary
+class WA,MA1,MA2 client
+
+%% Connections: Users → Apps
+U1 -->|Uses HTTPS + JWT| WA
+U1 -->|Uses HTTPS + JWT| MA1
+U2 -->|Uses HTTPS + JWT| MA2
+U3 -->|Uses HTTPS + JWT| MA2
+
+%% ============================
+%%            BACKEND
+%% ============================
+subgraph Backend[Backend – Modular Monolith API (Public API Layer)]
+API(Auth Module<br/>JWT Validation)
+REQ(Requests Module)
+OFF(Offers Module)
+SHP(Shipments Module<br/>State Machine)
+RT(Realtime Module<br/>WebSockets Provider)
+end
+class Backend boundary
+class API,REQ,OFF,SHP,RT internal
+
+%% Connections: Apps → Backend
+WA -->|HTTPS REST| API
+MA1 -->|HTTPS REST| API
+MA2 -->|HTTPS REST / WebSockets| API
+API --> REQ
+API --> OFF
+API --> SHP
+SHP --> RT
+
+%% ============================
+%%      INTERNAL COMPONENTS
+%% ============================
+subgraph Internal_Systems[Internal Only]
+DB[(PostgreSQL Database)]
+JOBS(Background Jobs<br/>Notifications, Lifecycle)
+end
+class Internal_Systems boundary
+class DB db
+class JOBS internal
+
+%% Connections: Backend → Internal
+REQ --> DB
+OFF --> DB
+SHP --> DB
+RT --> DB
+SHP --> JOBS
+JOBS --> DB
+
+%% ============================
+%%        EXTERNAL SERVICES
+%% ============================
+subgraph External_Providers[External Providers (Public → Backend Only)]
+AUTH(Auth Provider<br/>OAuth2 / OIDC)
+WS(WebSockets Provider<br/>Pusher/Ably)
+NOTIF(Notifications<br/>Email/SMS/Push)
+end
+class External_Providers boundary
+class AUTH,WS,NOTIF external
+
+%% Connections: Backend → External
+API -->|OAuth2 Login| AUTH
+RT -->|WebSockets| WS
+JOBS -->|Send Messages| NOTIF
